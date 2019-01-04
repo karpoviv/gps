@@ -29,12 +29,11 @@ import org.apache.http.message.BasicNameValuePair;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
 import android.util.Log;
 
+public class MyService extends Service {
 
-public class MyService extends Service{
-
-    private LocationManager locationManager;
     private static final String TAG = "ServiceTag";
     public String imei;
     public String SimSerial;
@@ -43,9 +42,19 @@ public class MyService extends Service{
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i(TAG, "Сервис начал создание");
+        Log.i(TAG, "Сервис начал работу");
 
-        TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         this.imei = telephonyManager.getDeviceId();
 
         this.mPhoneNumber = telephonyManager.getLine1Number();
@@ -56,46 +65,12 @@ public class MyService extends Service{
         Log.i(TAG, this.mPhoneNumber);
         Log.i(TAG, this.SimSerial);
 
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000 * 10, 10, locationListener);
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 1000 * 10, 10, locationListener);
     }
 
     public MyService() {
 
     }
 
-    private LocationListener locationListener = new LocationListener() {
-
-        @Override
-        public void onLocationChanged(Location location) {
-            showLocation(location);
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            //checkEnabled();
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            //checkEnabled();
-            //showLocation(locationManager.getLastKnownLocation(provider));
-            new MyService.RequestTask().execute("2","2","2","2","2");
-
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            if (provider.equals(LocationManager.GPS_PROVIDER)) {
-                //tvStatusGPS.setText("Status: " + String.valueOf(status));
-            } else if (provider.equals(LocationManager.NETWORK_PROVIDER)) {
-                //tvStatusNet.setText("Status: " + String.valueOf(status));
-            }
-        }
-    };
 
     private void showLocation(Location location) {
         if (location == null)
