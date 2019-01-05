@@ -13,6 +13,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import com.yandex.mapkit.Animation;
@@ -27,7 +29,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     public static final float ZOOM = 10.0f;
     private static final String API_KEY = "92607412-b875-44bf-b021-fc8580820375";
-    private MapView mapView;
+    private WebView webView;
     private Location location;
     private LocationManager locationManager;
     private PlacemarkMapObject mapObjectCollection;
@@ -35,12 +37,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onLocationChanged(final Location location) {
-        if (location != null) {
-            if (mapObjectCollection != null) {
-                mapView.getMap().getMapObjects().remove(mapObjectCollection);
-                setCamera(location);
-            }
-        }
     }
 
     @Override
@@ -63,21 +59,21 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         super.onCreate(savedInstanceState);
         MapKitFactory.setApiKey(API_KEY);
         MapKitFactory.initialize(this);
-        setContentView(R.layout.activity_main);
+            setContentView(R.layout.activity_main);
 
         init();
     }
 
     private void init() {
 
-        mapView = findViewById(R.id.mapview);
+    //    mapView = findViewById(R.id.mapview);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        checkPermissions();
         //don't supported vector image
         placeMaker = ImageProvider.fromResource(this, R.drawable.geofence);
-        if (checkPermissions()) {
-            location = getLocationOnProvider();
-            setCamera(this.location);
-        }
+        webView = findViewById(R.id.webView);
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.loadUrl("https://cargonet.live/map2.html");
 
     }
 
@@ -92,14 +88,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onStart() {
         super.onStart();
-        mapView.onStart();
-        MapKitFactory.getInstance().onStart();
+
     }
 
     @Override
     protected void onStop() {
-        mapView.onStop();
-        MapKitFactory.getInstance().onStop();
         super.onStop();
 
     }
@@ -109,7 +102,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
                 && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
             this.location = getLocationOnProvider();
-            setCamera(this.location);
 
         } else {
             Toast.makeText(this, "set permissions", Toast.LENGTH_SHORT).show();
@@ -156,20 +148,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
 
         return location1;
-    }
-
-    public void setCamera(final Location location) {
-        if (location != null) {
-
-            mapObjectCollection = mapView.getMap().getMapObjects().addPlacemark(
-                    new Point(location.getLatitude(), location.getLongitude()), placeMaker);
-
-            mapView.getMap().move(new CameraPosition(
-                            new Point(location.getLatitude(), location.getLongitude()),
-                            ZOOM, 0.0f, 0.0f),
-                    new Animation(Animation.Type.SMOOTH, 0), null);
-        }
-
     }
 
 }

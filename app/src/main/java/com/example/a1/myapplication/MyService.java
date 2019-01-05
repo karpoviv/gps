@@ -35,8 +35,7 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        android.os.Debug.waitForDebugger();
-        inipProviderLocation();
+        initProviderLocation();
         Log.i(TAG, "Сервис начал работу");
 
         final TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
@@ -172,7 +171,7 @@ public class MyService extends Service {
 
         @Override
         public void onLocationChanged(Location location) {
-            showLocation(location);
+          //  showLocation(location);
         }
 
         @Override
@@ -197,7 +196,7 @@ public class MyService extends Service {
             new LocationListenerImpl(LocationManager.NETWORK_PROVIDER)
     };
 
-    private void inipProviderLocation() {
+    private void initProviderLocation() {
         if (locationManager == null) {
             locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         }
@@ -205,6 +204,7 @@ public class MyService extends Service {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         if (locationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
                 try {
@@ -214,7 +214,7 @@ public class MyService extends Service {
                 }
             }
         }
-        super.onDestroy();
+
     }
 }
 
