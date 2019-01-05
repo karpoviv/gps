@@ -18,19 +18,26 @@ import com.yandex.mapkit.Animation;
 import com.yandex.mapkit.MapKitFactory;
 import com.yandex.mapkit.geometry.Point;
 import com.yandex.mapkit.map.CameraPosition;
+import com.yandex.mapkit.map.PlacemarkMapObject;
 import com.yandex.mapkit.mapview.MapView;
+import com.yandex.runtime.image.ImageProvider;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
-    public static final float ZOOM = 14.0f;
+    public static final float ZOOM = 10.0f;
     private static final String API_KEY = "92607412-b875-44bf-b021-fc8580820375";
     private MapView mapView;
     private LocationManager locationManager;
+    private PlacemarkMapObject mapObjectCollection;
+    private ImageProvider placeMaker;
 
     @Override
     public void onLocationChanged(final Location location) {
         if (location != null) {
-            setCamera(location);
+            if (mapObjectCollection != null) {
+                mapView.getMap().getMapObjects().remove(mapObjectCollection);
+                setCamera(location);
+            }
         }
     }
 
@@ -64,6 +71,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         mapView = findViewById(R.id.mapview);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //don't supported vector image
+        placeMaker = ImageProvider.fromResource(this, R.drawable.geofence);
     }
 
     public void startService(final View view) {
@@ -110,7 +119,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED & ActivityCompat.checkSelfPermission(
                         this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {ActivityCompat.requestPermissions(
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(
                             this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                                     Manifest.permission.READ_PHONE_STATE}, 1);
                     return;
@@ -132,11 +142,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     public void setCamera(Location location) {
         if (location != null) {
+
+            mapObjectCollection = mapView.getMap().getMapObjects().addPlacemark(
+                    new Point(location.getLatitude(), location.getLongitude()), placeMaker);
+
             mapView.getMap().move(new CameraPosition(
-                            new Point(location.getLatitude(),
-                                    location.getLongitude()),
+                            new Point(location.getLatitude(), location.getLongitude()),
                             ZOOM, 0.0f, 0.0f),
                     new Animation(Animation.Type.SMOOTH, 0), null);
+
         }
 
     }
