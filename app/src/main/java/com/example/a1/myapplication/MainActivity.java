@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -27,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     public static final float ZOOM = 10.0f;
     private static final String API_KEY = "92607412-b875-44bf-b021-fc8580820375";
     private MapView mapView;
+    private Location location;
     private LocationManager locationManager;
     private PlacemarkMapObject mapObjectCollection;
     private ImageProvider placeMaker;
@@ -64,7 +66,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         setContentView(R.layout.activity_main);
 
         init();
-        initLocation();
     }
 
     private void init() {
@@ -73,9 +74,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         //don't supported vector image
         placeMaker = ImageProvider.fromResource(this, R.drawable.geofence);
+        if (checkPermissions()) {
+            location = getLocationOnProvider();
+            setCamera(this.location);
+        }
+
     }
 
     public void startService(final View view) {
+        final Intent intent = new Intent(this, MyService.class);
         startService(new Intent(this, MyService.class));
     }
 
@@ -99,48 +106,60 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
                 && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-            initLocation();
+            this.location = getLocationOnProvider();
+            setCamera(this.location);
+
         } else {
             Toast.makeText(this, "set permissions", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void initLocation() {
+    private boolean checkPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED & ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.READ_PHONE_STATE}, 1);
+            return false;
+        }
+        return true;
+    }
+
+    private Location getLocationOnProvider() {
         final boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         final boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        Location location1;
-        if (!(isGPSEnabled || isNetworkEnabled)) {
-        } else {
-            if (isNetworkEnabled) {
-                if (ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED & ActivityCompat.checkSelfPermission(
-                        this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(
-                            this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.READ_PHONE_STATE}, 1);
-                    return;
-                }
+        Location location1 = null;
+        if (isNetworkEnabled) {
+            try {
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                         5000, 10, this);
                 location1 = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            } else {
+            } catch (final SecurityException e) {
+                Log.d("permition", "getPermition");
+                throw new RuntimeException();
+            }
+        }
+
+        if (isGPSEnabled) {
+            try {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                         5000, 10, this);
                 location1 = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            }
-
-            if (location1 != null) {
-                setCamera(location1);
+            } catch (final SecurityException e) {
+                Log.d("permition", "getPermition");
+                throw new RuntimeException();
             }
         }
+
+        return location1;
     }
 
-    public void setCamera(Location location) {
+    public void setCamera(final Location location) {
         if (location != null) {
 
             mapObjectCollection = mapView.getMap().getMapObjects().addPlacemark(
@@ -150,7 +169,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             new Point(location.getLatitude(), location.getLongitude()),
                             ZOOM, 0.0f, 0.0f),
                     new Animation(Animation.Type.SMOOTH, 0), null);
-
         }
 
     }
