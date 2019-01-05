@@ -82,7 +82,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     public void startService(final View view) {
-        final Intent intent = new Intent(this, MyService.class);
         startService(new Intent(this, MyService.class));
     }
 
